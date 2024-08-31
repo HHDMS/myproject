@@ -1,36 +1,39 @@
 package main
 
 import (
-	"gin/router"
+	"fmt"
+	"gin/routers"
 	"github.com/gin-gonic/gin"
-	"net/http"
+	"log"
 )
 
 func main() {
-	r := gin.Default()
-	router.InitRouter(r)
+	//initDB("tcp://192.168...")
+	LoggerMiddleware(initDB)("tcp://192.168...")
 
-	r.GET("/ping", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"message": "pong",
-		})
-	})
-
-	r.GET("api/users", func(ctx *gin.Context) {
-		ctx.JSON(http.StatusOK, gin.H{
-			"message": "get users",
-		})
-	})
-	r.POST("api/users", func(ctx *gin.Context) {
-		ctx.JSON(http.StatusOK, gin.H{
-			"message": "add users",
-		})
-	})
-	r.PUT("api/users", func(ctx *gin.Context) {
-		ctx.JSON(http.StatusOK, gin.H{
-			"message": "update users",
-		})
-	})
+	r := gin.New()
+	r.Use(gin.Logger(), gin.Recovery())
+	routers.InitRouter(r)
 
 	r.Run() // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
+}
+
+func CheckAuth(param string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		fmt.Println("call checkAuth func", param)
+		c.Next()
+	}
+
+}
+
+func initDB(connstr string) {
+	fmt.Println("初始化数据库", connstr)
+}
+
+func LoggerMiddleware(in func(connstr string)) func(connstr string) {
+	return func(connstr string) {
+		log.Println("call LoggerMiddleware start")
+		in(connstr)
+		log.Println("call LoggerMiddleware end")
+	}
 }
